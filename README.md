@@ -129,12 +129,12 @@ The ESRGAN model takes a low-resolution (LR) image (120x120) and generates a sup
 ### Example 1
 | Low-Resolution (120x120) | Super-Resolution (480x480) | High-Resolution (Ground Truth) |
 |:---:|:---:|:---:|
-| ![LR Image](Images/LR.TIF) | ![SR Image](Images/SR.png) | ![HR Image](Images/HR.TIF) |
+| ![LR Image](Images/LR.jpg) | ![HR Image](Images/HR.jpg) | ![SR Image](Images/SR.png) |
 
 ### Example 2
 | Low-Resolution (120x120) | Super-Resolution (480x480) | High-Resolution (Ground Truth) |
 |:---:|:---:|:---:|
-| ![LR Image 2](Images/LR%202.png) | ![SR Image 2](Images/SR%202.png) | ![HR Image 2](Images/HR%202.TIF) |
+| ![LR Image 2](Images/LR2.jpg) | ![HR Image 2](Images/HR2.jpg) | ![SR Image 2](Images/SR2.png) |
 
 ---
 
