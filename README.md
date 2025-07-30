@@ -127,12 +127,12 @@ The output image will be saved in the `output` directory.
 The ESRGAN model takes a low-resolution (LR) image (120x120) and generates a super-resolved (SR) version at 4x the resolution (480x480). Below is a comparison of the LR input, the SR output, and the original high-resolution (HR) ground truth.
 
 ### Example 1
-| Low-Resolution (120x120) | Super-Resolution (480x480) | High-Resolution (Ground Truth) |
+| Low-Resolution (120x120) | High-Resolution (Ground Truth) | Super-Resolution (480x480) |
 |:---:|:---:|:---:|
 | ![LR Image](Images/LR.jpg) | ![HR Image](Images/HR.jpg) | ![SR Image](Images/SR.png) |
 
 ### Example 2
-| Low-Resolution (120x120) | Super-Resolution (480x480) | High-Resolution (Ground Truth) |
+| Low-Resolution (120x120) | High-Resolution (Ground Truth) | Super-Resolution (480x480) |
 |:---:|:---:|:---:|
 | ![LR Image 2](Images/LR2.jpg) | ![HR Image 2](Images/HR2.jpg) | ![SR Image 2](Images/SR2.png) |
 
