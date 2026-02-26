@@ -16,15 +16,12 @@ from utils import save_weights_as_h5, save_tensor_as_tif
 
 def main():
     parser = argparse.ArgumentParser(description="A simplified and stabilized ESRGAN training script.")
-    # --- Simplified Model and Training ---
-    parser.add_argument("--n_pretrain_epochs", type=int, default=20, help="Longer pre-training for a better start.")
+    parser.add_argument("--n_pretrain_epochs", type=int, default=20)
     parser.add_argument("--n_gan_epochs", type=int, default=200)
-    parser.add_argument("--n_rrdb_blocks", type=int, default=10, help="Reduced number of RRDB blocks for stability.")
-    parser.add_argument("--lr", type=float, default=5e-5, help="A single, conservative learning rate.")
-    # --- Loss Weights (No Perceptual Loss) ---
+    parser.add_argument("--n_rrdb_blocks", type=int, default=10)
+    parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--lambda_adv", type=float, default=1e-3)
-    parser.add_argument("--lambda_pixel", type=float, default=1.0, help="Pixel loss is the primary driver.")
-    # --- Data and Logistics ---
+    parser.add_argument("--lambda_pixel", type=float, default=1.0)
     parser.add_argument("--lr_dir", type=str, required=True)
     parser.add_argument("--hr_dir", type=str, required=True)
     parser.add_argument("--hr_crop_size", type=int, default=256)
@@ -61,7 +58,7 @@ def main():
     
     scheduler_G = ReduceLROnPlateau(optimizer_G, 'max', patience=10, factor=0.5, verbose=True)
     
-    print("\n--- STARTING L1 PRE-TRAINING ---")
+    print("\nSTARTING L1 PRE-TRAINING")
     for epoch in range(opt.n_pretrain_epochs):
         generator.train()
         for i, (imgs_lr, imgs_hr, _) in enumerate(train_loader):
@@ -73,7 +70,7 @@ def main():
             optimizer_G.step()
             if i % 100 == 0: print(f"[PRE-TRAIN Epoch {epoch}] [L1 loss: {loss_pixel.item():.5f}]")
     
-    print("\n--- STARTING SIMPLIFIED ADVERSARIAL TRAINING ---\n")
+    print("STARTING ADVERSARIAL TRAINING")
     patience_counter, best_psnr = 0, 0.0
 
     for epoch in range(opt.n_gan_epochs):
@@ -81,7 +78,6 @@ def main():
         for i, (imgs_lr, imgs_hr, _) in enumerate(train_loader):
             imgs_lr, imgs_hr = imgs_lr.to(device), imgs_hr.to(device)
             
-            # --- Train Discriminator ---
             optimizer_D.zero_grad()
             loss_D = criterion_GAN(discriminator(imgs_hr), torch.ones_like(discriminator(imgs_hr))) + \
                      criterion_GAN(discriminator(generator(imgs_lr).detach()), torch.zeros_like(discriminator(generator(imgs_lr).detach())))
@@ -89,7 +85,6 @@ def main():
             loss_D.backward()
             optimizer_D.step()
 
-            # --- Train Generator ---
             optimizer_G.zero_grad()
             gen_hr = generator(imgs_lr)
             loss_pixel = criterion_pixel(gen_hr, imgs_hr)
@@ -101,7 +96,6 @@ def main():
             
             if i % 100 == 0: print(f"[GAN Epoch {epoch}] [D loss: {loss_D.item():.4f}] [G loss: {loss_G.item():.4f}]")
 
-        # --- Validation ---
         generator.eval(); val_psnr, val_ssim = 0.0, 0.0
         with torch.no_grad():
             for val_i, (val_lr, val_hr, hr_path) in enumerate(val_loader):
