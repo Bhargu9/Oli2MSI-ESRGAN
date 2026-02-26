@@ -15,11 +15,11 @@ from utils import save_weights_as_h5, save_scientific_tif, save_visual_tif
 
 def main():
     parser = argparse.ArgumentParser(description="Advanced fine-tuning for ESRGAN.")
-    parser.add_argument("--load_pretrained_g", type=str, required=True, help="Path to the generator_best.pth from the stable run.")
-    parser.add_argument("--n_rrdb_blocks", type=int, default=23, help="MUST MATCH the block count of the pre-trained model.")
+    parser.add_argument("--load_pretrained_g", type=str, required=True)
+    parser.add_argument("--n_rrdb_blocks", type=int, default=23)
     parser.add_argument("--n_finetune_epochs", type=int, default=100)
-    parser.add_argument("--lr_g", type=float, default=1e-5, help="Generator learning rate.")
-    parser.add_argument("--lr_d", type=float, default=4e-5, help="Discriminator learning rate.")
+    parser.add_argument("--lr_g", type=float, default=1e-5)
+    parser.add_argument("--lr_d", type=float, default=4e-5)
     parser.add_argument("--lambda_adv", type=float, default=5e-3)
     parser.add_argument("--lambda_pixel", type=float, default=1e-2)
     parser.add_argument("--lambda_content", type=float, default=1.0)
@@ -37,7 +37,7 @@ def main():
     os.makedirs("images/finetune_tif_visual", exist_ok=True)
     os.makedirs("images/finetune_tif_scientific", exist_ok=True)
     os.makedirs("saved_models", exist_ok=True)
-    print("--- ESRGAN Advanced Fine-tuning ---"); print(opt)
+    print("ESRGAN Advanced Fine-tuning"); print(opt)
 
     lr_files, hr_files = sorted(glob.glob(f"{opt.lr_dir}/*.TIF")), sorted(glob.glob(f"{opt.hr_dir}/*.TIF"))
     image_pairs = list(zip(lr_files, hr_files)); random.Random(42).shuffle(image_pairs)
@@ -66,7 +66,7 @@ def main():
     optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr_d)
     scheduler_G = ReduceLROnPlateau(optimizer_G, 'max', patience=5, factor=0.5, verbose=True)
 
-    print("\n--- STARTING ADVANCED FINE-TUNING ---\n")
+    print("STARTING ADVANCED FINE-TUNING")
     patience_counter, best_score = 0, 0.0
 
     for epoch in range(opt.n_finetune_epochs):
@@ -75,7 +75,6 @@ def main():
         for i, (imgs_lr, imgs_hr, _) in enumerate(train_loader):
             imgs_lr, imgs_hr = imgs_lr.to(device), imgs_hr.to(device)
             
-            # Train Discriminator
             optimizer_D.zero_grad()
             real_validity = discriminator(imgs_hr)
             fake_validity = discriminator(generator(imgs_lr).detach())
@@ -87,16 +86,13 @@ def main():
             loss_D.backward()
             optimizer_D.step()
 
-            # Train Generator
             optimizer_G.zero_grad()
             gen_hr = generator(imgs_lr)
             
-            # Calculate all three losses
             loss_pixel = criterion_pixel(gen_hr, imgs_hr)
             loss_content = criterion_content(feature_extractor(gen_hr), feature_extractor(imgs_hr).detach())
             loss_G_adv = criterion_GAN(discriminator(gen_hr), torch.ones_like(discriminator(gen_hr)))
             
-            # Combine losses with their respective weights
             loss_G = opt.lambda_pixel * loss_pixel + opt.lambda_content * loss_content + opt.lambda_adv * loss_G_adv
             loss_G.backward()
             optimizer_G.step()
@@ -108,19 +104,16 @@ def main():
                     f"[adv: {loss_G_adv.item():.4f}, pix: {loss_pixel.item():.4f}, cont: {loss_content.item():.4f}]"
                 )
 
-        # --- Validation ---
         generator.eval()
         val_psnr, val_ssim = 0.0, 0.0
         with torch.no_grad():
             for val_i, (val_lr, val_hr, hr_path) in enumerate(val_loader):
                 gen_hr_val = generator(val_lr.to(device))
-                # Clamp output before normalization for safety
                 gen_hr_val_save = torch.clamp((gen_hr_val + 1) / 2.0, 0.0, 1.0)
                 val_hr_save = (val_hr.to(device) + 1) / 2.0
                 val_psnr += psnr_metric(gen_hr_val_save, val_hr_save)
                 val_ssim += ssim_metric(gen_hr_val_save, val_hr_save)
                 if val_i == 0:
-                    # Save three versions of the output image
                     save_image(gen_hr_val_save[0], f"images/finetune_png/epoch_{epoch}.png")
                     save_visual_tif(gen_hr_val[0], f"images/finetune_tif_visual/epoch_{epoch}.tif")
                     save_scientific_tif(gen_hr_val[0], hr_path[0], f"images/finetune_tif_scientific/epoch_{epoch}.tif")
@@ -128,7 +121,6 @@ def main():
         avg_psnr = val_psnr / len(val_loader)
         avg_ssim = val_ssim / len(val_loader)
         
-        # Using a combined score for evaluation
         combined_score = (0.7 * avg_ssim) + (0.3 * (avg_psnr / 40.0))
         
         scheduler_G.step(combined_score)
