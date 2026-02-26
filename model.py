@@ -8,11 +8,9 @@ class FeatureExtractor(nn.Module):
     def __init__(self):
         super(FeatureExtractor, self).__init__()
         vgg19_model = vgg19(weights=VGG19_Weights.DEFAULT)
-        # Use features before activation as in the original ESRGAN paper
         self.feature_extractor = nn.Sequential(*list(vgg19_model.features.children())[:35]).eval()
 
     def forward(self, img):
-        # VGG expects a 3-channel image. Repeat if necessary.
         if img.shape[1] == 1:
              img = img.repeat(1, 3, 1, 1)
         return self.feature_extractor(img)
@@ -97,8 +95,6 @@ class Discriminator(nn.Module):
         self.input_shape = input_shape
         in_channels, _, _ = self.input_shape
 
-        # --- UPDATE: Added Spectral Normalization to each Conv2d layer ---
-        # This stabilizes the discriminator's training, leading to more robust results.
         def discriminator_block(in_filters, out_filters):
             layers = [
                 spectral_norm(nn.Conv2d(in_filters, out_filters, kernel_size=3, stride=1, padding=1)),
