@@ -32,15 +32,12 @@ class Oli2MSIDataset(Dataset):
         with rasterio.open(hr_file) as src:
             hr_image = src.read().astype(np.float32)
 
-        # Normalize LR and HR images to [0, 1] first
         lr_image = (lr_image - LR_MIN) / (LR_MAX - LR_MIN)
         hr_image = (hr_image - HR_MIN) / (HR_MAX - HR_MIN)
         
-        # Then normalize to [-1, 1] to work with Tanh activation
         lr_image = (lr_image * 2) - 1
         hr_image = (hr_image * 2) - 1
 
-        # Synchronized Random Cropping
         lr_h, lr_w = lr_image.shape[1], lr_image.shape[2]
         rand_x_lr = random.randint(0, lr_w - self.lr_crop_size)
         rand_y_lr = random.randint(0, lr_h - self.lr_crop_size)
@@ -50,7 +47,6 @@ class Oli2MSIDataset(Dataset):
         rand_y_hr = rand_y_lr * self.upscale_factor
         hr_cropped = hr_image[:, rand_y_hr:rand_y_hr + self.hr_crop_size, rand_x_hr:rand_x_hr + self.hr_crop_size]
 
-        # Augmentations
         if random.random() > 0.5:
             lr_cropped = np.ascontiguousarray(np.flip(lr_cropped, axis=2))
             hr_cropped = np.ascontiguousarray(np.flip(hr_cropped, axis=2))
